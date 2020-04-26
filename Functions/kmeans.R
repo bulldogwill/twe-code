@@ -5,8 +5,7 @@
 #'
 #' @param data A matrix of data.
 #' @param k The number of clusters.
-#' @param inits A matrix of initial values for the clusters. If not provided will 
-#'             be randomly chosen. Number of columns should match data.
+#' @param inits A matrix of initial values for the clusters. Number of columns should match data.
 #' @param tol Stopping tolerance.
 #' @param iter Maximum number of iterations.
 #' @export
@@ -51,38 +50,52 @@ kmeans <- function(data, k, inits, tol, iter){
     
     toli <- sum(apply(X = means_old - means, MARGIN = 1, FUN = norm, "2")) #sums up the distance for each oldmean to new mean
     count <- count+1
-
   }
-print(toli)
 
-return(data)
+  #list of things to return
+  list.output <- list(data, means, toli,distances)
+return(list.output)
 }
 
 
-x <- rnorm(100)
-y <- rnorm(100)
-
-data <- data.frame(x,y)
-inits <- matrix(c(1,1,2,2), nrow=2,ncol=2)
-
-kmeans.out1 <- kmeans(data, k=2, inits, tol=.01, iter = 100)
-
-test <- as.data.frame(cbind(x,y))
-
-plot <- ggplot(data, aes(x=x,y=y, color=as.factor(data$cluster))) + geom_point()
 
 
 
+#hard data...kmeans can fail if poor inital values are supplied, or if one
+#dimension is on a different order of magnitude. One possible solution
+#is to scale the data so that all dimensions have mean 0 and variance 1
+x <- rnorm(300,0,5)
+y1 <- rnorm(150,-1,.25)
+y2 <- rnorm(150,1,.25)
+y <- c(y1,y2)
+dat <- data.frame(x,y)
+
+inits <- matrix(c(-1,0,1,0), nrow = 2,ncol=2, byrow = TRUE)
+
+kmeans.out <- kmeans(dat, 2, inits, tol = .0000001, iter = 100)
+
+data <- as.data.frame(kmeans.out[[1]])
+centroids <- as.data.frame(kmeans.out[[2]])
+colnames(centroids) <- c("x","y")
+
+plot <- ggplot(data, aes(x=x,y=y, color=as.factor(data$cluster))) + geom_point()+scale_color_manual(values=c("green", "purple"))+geom_point(data=centroids,aes(x=x,y=y),inherit.aes = FALSE,shape=10,size=5  )+labs(color="Cluster")
+
+plot
 
 
-#using iris 2 d
-iris_small <- iris[ , 3:4]
-inits <- matrix(c(3,2,4,1,7,.1), nrow = 3,ncol=2, byrow = TRUE)
-
+#using iris in 2 dimensions to produce a plot
+library(ggplot2)
+iris_small <- iris[ , 1:2]
+#picked bad inits on purpose to limit test
+inits <- matrix(c(5,4,5.4,5,6,3), nrow = 3,ncol=2, byrow = TRUE)
 
 kmeans.out <- kmeans(iris_small, 3, inits, tol = .0001, iter = 100)
 
-plot <- ggplot(kmeans.out, aes(x=Petal.Length,y=Petal.Width, color=as.factor(kmeans.out$cluster))) + geom_point()+scale_color_manual(values=c("red", "purple", "green"))
-                                                                                            
+data <- as.data.frame(kmeans.out[[1]])
+centroids <- as.data.frame(kmeans.out[[2]])
+colnames(centroids) <- c("x","y")
+
+plot <- ggplot(data, aes(x=Sepal.Length,y=Sepal.Width, color=as.factor(data$cluster))) + geom_point()+scale_color_manual(values=c("red", "purple", "green"))+geom_point(data=centroids,aes(x=x,y=y),inherit.aes = FALSE,shape=10,size=5  )+labs(color="Cluster")
+
 plot
 
